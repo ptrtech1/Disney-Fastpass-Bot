@@ -5,14 +5,23 @@ from selenium.webdriver.common.action_chains import ActionChains
 from time import sleep
 import smtplib
 import sys
+import winsound
+import random
 
 import credentials #The file which stores passwords and guest id's
+
+#Hardcode values - remove the hash and update the value so when running the code, it just goes...
+#park = "3"
+#chosenride = "8"
+#numGuests = "2"
+#timeFrameChoice = "2"
 
 #All the rides with fastpasses: ak = animal kingdom, mk = magic kingdom, hs = hollywood studios, e = epcot
 akRides = ["Avatar Flight of Passage", "Na'vi River Journey", "DINOSAUR", "Expedition Everest - Legend of the Forbidden Mountain", "Festival of the Lion King", "Finding Nemo - The Musical", "It's Tough to be a Bug!", "Kali River Rapids", "Kilimanjaro Safaris", "Meet Favorite Disney Pals", "Primeval Whirl", "Rivers of Light"]
 mkRides = ["The Barnstormer", "Big Thunder Mountain Railroad", "Buzz Lightyear's Space Ranger Spin", "Dumbo the Flying Elephant", "Enchanted Tales with Belle", "Haunted Mansion", "it's a small world", "Jungle Cruise", "Mad Tea Party", "The Magic Carpets of Aladdin", "The Many Adventures of Winnie the Pooh", "Meet Ariel at Her Grotto", "Meet Cinderella", "Meet Mickey", "Meet Rapunzel", "Meet Tinker Bell", "Mickey's PhilharMagic", "Monsters, Inc. Laugh Floor", "Peter Pan's Flight", "Pirates of the Caribbean", "Space Mountain", "Splash Mountain", "Tomorrowland Speedway", "Journey of The Little Mermaid", "Seven Dwarfs Mine Train"]
-hsRides = ["Beauty and the Beast-Live", "Fantasmic!", "Rock 'n' Roller Coaster", "Disney Junior - Live", "Frozen Sing-Along", "Epic Stunt Spectacular!", "Millennium Falcon: Smugglers Run", "Muppet*Vision 3D", "Star Tours", "The Twilight Zone Tower", "Voyage of The Little Mermaid", "Toy Story Mania!", "Slinky Dog Dash - Now Open!", "Alien Swirling Saucers"]
+hsRides = ["Alien Swirling Saucers", "Beauty and the Beast-Live", "Fantasmic!", "Rock 'n' Roller Coaster", "Disney Junior - Live", "Frozen Sing-Along", "Epic Stunt Spectacular!", "Mickey & Minnie's Runaway Railway", "Millennium Falcon: Smugglers Run", "Muppet*Vision 3D", "Star Tours", "The Twilight Zone Tower", "Voyage of The Little Mermaid", "Toy Story Mania!", "Slinky Dog Dash - Now Open!"]
 eRides = ["Frozen Ever After", "IllumiNations", "Soarin'", "Test Track", "Short Film Festival", "Journey Into Imagination", "Living with the Land", "Meet Disney Pals", "Mission: SPACE", "Nemo & Friends", "Spaceship Earth", "Turtle Talk With Crush"]
+
 
 #Grouped all rides into an array to get
 parkRides = [mkRides, eRides, hsRides, akRides]
@@ -27,9 +36,12 @@ def checkCredentialsFile():
 
 #Returns a park that the user wants fastpasses for
 def getPark():
-
+    global park
+    
     print("Magic Kingdom: 1 | Epcot: 2 | Hollywood Studios: 3 | Animal Kingdom: 4\n")
-    park = input("What park are you going to: ")
+    
+    try: park
+    except NameError: park = input("What park are you going to: ")
 
     #Loops until input equals 1, 2, 3, or 4
     while park != "1" and park != "2" and park != "3" and park != "4":
@@ -40,7 +52,8 @@ def getPark():
 
 #Function to handle getting magic kingdom ride names
 def getRide(park):
-
+    global chosenride
+    
     parkrides = parkRides[int(park) - 1] #identifies the chosen park rides
 
     counter = 0
@@ -61,8 +74,11 @@ def getRide(park):
         print(str(counter) + ".) " + currentride) 
 
     print("") #add an extra line for style
-    chosenride = input("Choose a ride: ")
-    print("") #add an extra line for style
+
+    try: chosenride
+    except NameError:
+        chosenride = input("Choose a ride: ")
+        print("") #add an extra line for style
 
     return chosenride
 
@@ -74,11 +90,15 @@ def getMaxHour():
 
 #Returns the number of guests in the party
 def getNumberOfGuests():
-
-    numGuests = input("\nHow many people in the party including yourself:\n" +
+    global numGuests
+    
+    try: numGuests
+    except NameError:
+        numGuests = input("\nHow many people in the party including yourself:\n" +
                   "       1.) Just 1\n" +
                   "       2.) 2 or More\n" +
                   "Option: ")
+    
     while numGuests != "1" and numGuests != "2":
           numGuests = input("--INVALID CHOICE-- How many people in the party including yourself:\n" +
                       "       1.) Just 1\n" +
@@ -121,6 +141,7 @@ def createChromeDriver():
 def clickGetStartedButton(driver):
     while True:
         try:
+            driver.find_element_by_xpath("""//*[@id="pageContainerSyndicated"]/div/div[3]/div/div[2]""").click()
             driver.find_element_by_xpath("""//*[@id="fastPasslandingPage"]/div[3]/div[1]/div/div/div/div""").click()
             break
         except:
@@ -149,9 +170,12 @@ def continueToSelectUsersScreen(driver):
 #This clicks the guests specified in the credentials.py file
 def specifyGuests(driver):
 
+    sleep(5)
+    
     for guest in credentials.guests:
         driver.find_element_by_xpath("""//*[@id=""" + '"' + guest + '"' + """]/div""").click()
 
+    sleep(5)
     
     continueToDateSelection(driver)
 
@@ -201,6 +225,7 @@ def loopTimePeriod(driver, currentTimePeriod):
             driver.find_element_by_xpath("""//*[@id="selectExperienceTimeFilter"]/div/div[3]/div""").click() #Clicks evening
             return 3
         elif currentTimePeriod == 3:
+        #elif currentTimePeriod == 2:
             driver.find_element_by_xpath("""//*[@id="selectExperienceTimeFilter"]/div/div[1]/div""").click() #Clicks morning
             return 1
     except:
@@ -212,6 +237,17 @@ def loopTimePeriod(driver, currentTimePeriod):
 
 
 def confirmRide(driver, ride, num, timeNum, rideLocation):
+    i = 0
+    while i < 10:
+        i += 1
+        winsound.PlaySound("ringout.wav", winsound.SND_NOSTOP)
+        sleep(1)
+
+    while i < 11:
+        i += 1
+        winsound.PlaySound("ringout.wav", winsound.SND_NOSTOP)
+        sleep(10)
+    
     if timeNum == 0:
         timeNum = 1
     timeText = driver.find_element_by_xpath("""//*[@id="selectExperienceExperiencesList"]/div[""" + str(rideLocation) + """]/div[2]/div[""" + str(num) + """]/div/div[2]/div/div[""" + str(timeNum) + """]""").click()
@@ -223,6 +259,8 @@ def confirmRide(driver, ride, num, timeNum, rideLocation):
             break
         except:
             continue
+
+
 
 
 def checkTime(driver, num, minHour, maxHour, rideLocation):
@@ -281,9 +319,13 @@ def magicKingdomParkHandler(driver, ride, minHour, maxHour):
     try:
         for num in range(1, len(mkRides) + 1):
             try:
+                driver.find_element_by_xpath("""//*[text()='Select a Different Experience']""").click()
+            except:
+                continue
+
+            try:
                 element = driver.find_element_by_xpath("""//*[@id="selectExperienceExperiencesList"]/div[2]/div[2]/div[""" + str(num) + """]""") #uses num to go through all the rides on the website
                 if ride in element.text:
-
                     timeNum = checkTime(driver, num, minHour, maxHour, 2)
                     if timeNum != False:
                         confirmRide(driver, ride, num, timeNum, 2)
@@ -296,23 +338,37 @@ def magicKingdomParkHandler(driver, ride, minHour, maxHour):
     return False
 
 def animalEpcotHollywoodParkHandler(driver, park, ride, minHour, maxHour):
+
     try:
-        for num in range(1, len(parkRides[int(park) - 1]) + 1):
+        driver.find_element_by_xpath("""//*[text()='Select a Different Experience']""").click()
+        sleep(10)
+    except:
+        pass
+
+    try:
+        for num in range(1, len(parkRides[int(park) - 1]) + 1):          
             try:
                 element = driver.find_element_by_xpath("""//*[@id="selectExperienceExperiencesList"]/div[2]/div[2]/div[""" + str(num) + """]""")
                 if ride in element.text:
-
                     timeNum = checkTime(driver, num, minHour, maxHour, 2)
                     if timeNum != False:
                         confirmRide(driver, ride, num, timeNum, 2)
                         return True
             except:
                 continue
+                
+         
+        try:
+            unavailable = driver.find_element_by_xpath("""//*[@id="selectExperienceExperiencesList"]/div[3]/div""")
+            if "Currently Unavailable" in unavailable.text:
+                return False
+        except:
+            pass
+
         for num in range(1, len(parkRides[int(park) -1]) + 1):
             try:
                 element = driver.find_element_by_xpath("""//*[@id="selectExperienceExperiencesList"]/div[3]/div[2]/div[""" + str(num) + """]""")
                 if ride in element.text:
-
                     timeNum = checkTime(driver, num, minHour, maxHour, 3)
                     if timeNum != False:
                         confirmRide(driver, ride, num, timeNum, 3)
@@ -331,7 +387,8 @@ def animalEpcotHollywoodParkHandler(driver, park, ride, minHour, maxHour):
 
 #Where the program starts
 def main():
-
+    global timeFrameChoice
+    
     if not checkCredentialsFile():
         sys.exit("You need to fill out the credentials.py file before continuing")
 
@@ -342,10 +399,13 @@ def main():
     #If the park is magic kingdom set the ride1, ride2, ride3 equal to the chosen ride
     ride = getRide(park)
 
-    timeFrameChoice = input("Do you want to set a time frame for your ride:\n" +
+    try: timeFrameChoice
+    except NameError:
+        timeFrameChoice = input("Do you want to set a time frame for your ride:\n" +
                       "     1.) Yes\n" +
                       "     2.) No\n" + 
                       "Choice: ")
+        
 
     if timeFrameChoice == "1":
         minHour = getMinHour()
@@ -380,7 +440,7 @@ def main():
 
 
     while allRidesFound == False:
-        sleep(5)
+        sleep(random.randint(5, 10))
 
         #If the park is magic kingdom, it has its seperate function because of the different HTML layout on the website
         if park == "1":
@@ -394,7 +454,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
-
-
